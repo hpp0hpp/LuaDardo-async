@@ -34,11 +34,11 @@ class StringLib {
   };
 
   static Future<int> openStringLib(LuaState ls) async {
-
     //await ls.newLib(_strLib);
     await _createMetatable(ls);
     ls.pushGlobalTable();
-    await ls.setFuncsAsync(_strLib, 0); // Replace strlib with global because it's broken
+    await ls.setFuncsAsync(
+        _strLib, 0); // Replace strlib with global because it's broken
     return 1;
   }
 
@@ -188,7 +188,7 @@ class StringLib {
     var nArgs = ls.getTop();
 
     // s = make([]byte, nArgs)
-    var s = List<int>.filled(nArgs,0);
+    var s = List<int>.filled(nArgs, 0);
     for (var i = 1; i <= nArgs; i++) {
       var c = (await ls.checkInteger(i))!;
       ls.argCheck((c & 0xff) == c, i, "value out of range");
@@ -313,6 +313,8 @@ class StringLib {
       case 's':
       case 'q': // string
         return sprintf(tag, [await ls.toString2(argIdx)]);
+      case 'g': // string
+        return sprintf(tag, [await ls.toNumber(argIdx)]);
       default:
         throw Exception("todo! tag=" + tag);
     }
@@ -368,7 +370,7 @@ class StringLib {
       end += s.length - tail.length + 1;
     }
 
-    return List<int?>.filled(2,null)
+    return List<int?>.filled(2, null)
       ..[0] = start
       ..[1] = end;
   }
@@ -441,7 +443,7 @@ class StringLib {
     }
 
     if (indexes.isEmpty) {
-      return List.filled(2,null)
+      return List.filled(2, null)
         ..[0] = s
         ..[1] = 0;
     }
@@ -452,7 +454,7 @@ class StringLib {
     var tail = s.substring(lastEnd);
 
     var newHead = head.replaceAll(regExp, repl!);
-    return List.filled(2,null)
+    return List.filled(2, null)
       ..[0] = '$newHead$tail'
       ..[1] = nMatches;
   }
