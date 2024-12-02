@@ -406,6 +406,7 @@ class LuaStateImpl implements LuaState, LuaVM {
     Object? val = _stack!.get(idx);
     if (val is String) {
       pushInteger(val.length);
+      return;
     }
 
     Object? mm = getMetamethod(val, val, "__len");
@@ -416,6 +417,7 @@ class LuaStateImpl implements LuaState, LuaVM {
 
     if (val is LuaTable) {
       pushInteger(val.length());
+      return;
     } else {
       throw Exception("length error!");
     }
@@ -925,6 +927,15 @@ class LuaStateImpl implements LuaState, LuaVM {
   }
 
   @override
+  LuaTable checkTable(int arg) {
+    if (type(arg) != LuaType.luaTable) {
+      tagError(arg, LuaType.luaTable);
+    }
+
+    return _stack!.get(arg) as LuaTable;
+  }
+
+  @override
   void checkType(int arg, LuaType t) {
     if (type(arg) != t) {
       tagError(arg, t);
@@ -1031,7 +1042,7 @@ class LuaStateImpl implements LuaState, LuaVM {
 
   @override
   Future<void> openLibs() async {
-  Map<String, DartFunctionAsync> libs = <String, DartFunctionAsync>{
+    Map<String, DartFunctionAsync> libs = <String, DartFunctionAsync>{
       "_G": BasicLib.openBaseLib,
       "package": PackageLib.openPackageLib,
       "table": TableLib.openTableLib,

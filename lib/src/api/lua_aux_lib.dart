@@ -1,7 +1,7 @@
+import '../state/lua_table.dart';
 import 'lua_type.dart';
 
 abstract class LuaAuxLib {
-
 /* Error-report functions */
   int error2(String fmt, [List<Object?>? a]);
 
@@ -21,6 +21,7 @@ abstract class LuaAuxLib {
   double? checkNumber(int arg);
 
   String? checkString(int arg);
+  LuaTable? checkTable(int arg);
 
   Future<int?> optInteger(int arg, int? d);
 
@@ -56,8 +57,8 @@ abstract class LuaAuxLib {
 
   Future<void> openLibs();
 
-  Future<int> ref (int t);
-  Future<void> unRef (int t, int ref);
+  Future<int> ref(int t);
+  Future<void> unRef(int t, int ref);
 
   Future<void> requireF(String modname, DartFunctionAsync openf, bool glb);
 
