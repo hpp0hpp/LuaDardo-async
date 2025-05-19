@@ -7,7 +7,6 @@ import 'exp_processor.dart';
 import 'funcinfo.dart';
 
 class StatProcessor {
-
   static void processStat(FuncInfo fi, Stat node) {
     if (node is FuncCallStat) {
       processFuncCallStat(fi, node);
@@ -22,7 +21,7 @@ class StatProcessor {
     } else if (node is IfStat) {
       processIfStat(fi, node);
     } else if (node is ForNumStat) {
-      processForNumStat(fi,node);
+      processForNumStat(fi, node);
     } else if (node is ForInStat) {
       processForInStat(fi, node);
     } else if (node is AssignStat) {
@@ -31,14 +30,13 @@ class StatProcessor {
       processLocalVarDeclStat(fi, node);
     } else if (node is LocalFuncDefStat) {
       processLocalFuncDefStat(fi, node);
-    } else if (node is LabelStat
-    || node is GotoStat) {
-      throw Exception("label and goto statements are not supported!");
+    } else if (node is LabelStat || node is GotoStat) {
+      print("label and goto statements are not supported!");
     }
   }
 
   static void processLocalFuncDefStat(FuncInfo fi, LocalFuncDefStat node) {
-    int r = fi.addLocVar(node.name, fi.pc()+2);
+    int r = fi.addLocVar(node.name, fi.pc() + 2);
     ExpProcessor.processFuncDefExp(fi, node.exp, r);
   }
 
@@ -83,10 +81,10 @@ class StatProcessor {
     fi.enterScope(true);
     BlockProcessor.processBlock(fi, node.block);
     fi.closeOpenUpvals(node.block.lastLine);
-    fi.emitJmp(node.block.lastLine, 0, pcBeforeExp-fi.pc()-1);
+    fi.emitJmp(node.block.lastLine, 0, pcBeforeExp - fi.pc() - 1);
     fi.exitScope(fi.pc());
 
-    fi.fixSbx(pcJmpToEnd, fi.pc()-pcJmpToEnd);
+    fi.fixSbx(pcJmpToEnd, fi.pc() - pcJmpToEnd);
   }
 
   /*
@@ -107,7 +105,7 @@ class StatProcessor {
 
     int line = ExpHelper.lastLineOf(node.exp);
     fi.emitTest(line, a, 0);
-    fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock-fi.pc()-1);
+    fi.emitJmp(line, fi.getJmpArgA(), pcBeforeBlock - fi.pc() - 1);
     fi.closeOpenUpvals(line);
 
     fi.exitScope(fi.pc() + 1);
@@ -123,13 +121,13 @@ class StatProcessor {
                         jmp                     jmp                     jmp
     */
   static void processIfStat(FuncInfo fi, IfStat node) {
-    var pcJmpToEnds = List<int?>.filled(node.exps.length,null);
+    var pcJmpToEnds = List<int?>.filled(node.exps.length, null);
     int pcJmpToNextExp = -1;
 
     for (int i = 0; i < node.exps.length; i++) {
       Exp exp = node.exps[i];
       if (pcJmpToNextExp >= 0) {
-        fi.fixSbx(pcJmpToNextExp, fi.pc()-pcJmpToNextExp);
+        fi.fixSbx(pcJmpToNextExp, fi.pc() - pcJmpToNextExp);
       }
 
       int oldRegs = fi.usedRegs;
@@ -145,7 +143,7 @@ class StatProcessor {
       BlockProcessor.processBlock(fi, block);
       fi.closeOpenUpvals(block.lastLine);
       fi.exitScope(fi.pc() + 1);
-      if (i < node.exps.length-1) {
+      if (i < node.exps.length - 1) {
         pcJmpToEnds[i] = fi.emitJmp(block.lastLine, 0, 0);
       } else {
         pcJmpToEnds[i] = pcJmpToNextExp;
@@ -153,7 +151,7 @@ class StatProcessor {
     }
 
     for (int? pc in pcJmpToEnds) {
-      fi.fixSbx(pc!, fi.pc()-pc);
+      fi.fixSbx(pc!, fi.pc() - pc);
     }
   }
 
@@ -164,11 +162,12 @@ class StatProcessor {
 
     fi.enterScope(true);
 
-    LocalVarDeclStat lvdStat = LocalVarDeclStat(0,
+    LocalVarDeclStat lvdStat = LocalVarDeclStat(
+        0,
         [forIndexVar, forLimitVar, forStepVar],
         [node.initExp, node.limitExp, node.stepExp]);
     processLocalVarDeclStat(fi, lvdStat);
-    fi.addLocVar(node.varName, fi.pc()+2);
+    fi.addLocVar(node.varName, fi.pc() + 2);
 
     int a = fi.usedRegs - 4;
     int pcForPrep = fi.emitForPrep(node.lineOfDo, a, 0);
@@ -176,8 +175,8 @@ class StatProcessor {
     fi.closeOpenUpvals(node.block.lastLine);
     int pcForLoop = fi.emitForLoop(node.lineOfFor, a, 0);
 
-    fi.fixSbx(pcForPrep, pcForLoop-pcForPrep-1);
-    fi.fixSbx(pcForLoop, pcForPrep-pcForLoop);
+    fi.fixSbx(pcForPrep, pcForLoop - pcForPrep - 1);
+    fi.fixSbx(pcForLoop, pcForPrep - pcForLoop);
 
     fi.exitScope(fi.pc());
     fi.fixEndPC(forIndexVar, 1);
@@ -222,7 +221,7 @@ class StatProcessor {
 
     int oldRegs = fi.usedRegs;
     if (nExps == nNames) {
-      for(Exp? exp in exps) {
+      for (Exp? exp in exps) {
         int a = fi.allocReg();
         ExpProcessor.processExp(fi, exp, a, 1);
       }
@@ -230,18 +229,19 @@ class StatProcessor {
       for (int i = 0; i < exps.length; i++) {
         Exp? exp = exps[i];
         int a = fi.allocReg();
-        if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+        if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
           ExpProcessor.processExp(fi, exp, a, 0);
         } else {
           ExpProcessor.processExp(fi, exp, a, 1);
         }
       }
-    } else { // nNames > nExps
+    } else {
+      // nNames > nExps
       bool multRet = false;
       for (int i = 0; i < exps.length; i++) {
         Exp? exp = exps[i];
         int a = fi.allocReg();
-        if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+        if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
           multRet = true;
           int n = nNames - nExps + 1;
           ExpProcessor.processExp(fi, exp, a, n);
@@ -260,7 +260,7 @@ class StatProcessor {
     fi.usedRegs = oldRegs;
     int startPC = fi.pc() + 1;
     for (String name in node.nameList) {
-    fi.addLocVar(name, startPC);
+      fi.addLocVar(name, startPC);
     }
   }
 
@@ -269,9 +269,9 @@ class StatProcessor {
     int nExps = exps.length;
     int nVars = node.varList.length;
 
-    var tRegs = List<int>.filled(nVars,0);
-    var kRegs = List<int>.filled(nVars,0);
-    var vRegs = List<int>.filled(nVars,0);
+    var tRegs = List<int>.filled(nVars, 0);
+    var kRegs = List<int>.filled(nVars, 0);
+    var vRegs = List<int>.filled(nVars, 0);
     int oldRegs = fi.usedRegs;
 
     for (int i = 0; i < node.varList.length; i++) {
@@ -284,7 +284,7 @@ class StatProcessor {
         ExpProcessor.processExp(fi, taExp.keyExp, kRegs[i], 1);
       } else {
         String? name = (exp as NameExp).name;
-        if (fi.slotOfLocVar(name)! < 0 && fi.indexOfUpval(name)< 0) {
+        if (fi.slotOfLocVar(name)! < 0 && fi.indexOfUpval(name) < 0) {
           // global var
           kRegs[i] = -1;
           if (fi.indexOfConstant(name) > 0xFF) {
@@ -301,18 +301,19 @@ class StatProcessor {
       for (int i = 0; i < exps.length; i++) {
         Exp? exp = exps[i];
         int a = fi.allocReg();
-        if (i >= nVars && i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+        if (i >= nVars && i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
           ExpProcessor.processExp(fi, exp, a, 0);
         } else {
           ExpProcessor.processExp(fi, exp, a, 1);
         }
       }
-    } else { // nVars > nExps
+    } else {
+      // nVars > nExps
       bool multRet = false;
       for (int i = 0; i < exps.length; i++) {
         Exp? exp = exps[i];
         int a = fi.allocReg();
-        if (i == nExps-1 && ExpHelper.isVarargOrFuncCall(exp)) {
+        if (i == nExps - 1 && ExpHelper.isVarargOrFuncCall(exp)) {
           multRet = true;
           int n = nVars - nExps + 1;
           ExpProcessor.processExp(fi, exp, a, n);
@@ -331,7 +332,7 @@ class StatProcessor {
     int lastLine = node.lastLine;
     for (int i = 0; i < node.varList.length; i++) {
       Exp? exp = node.varList[i];
-      if (! (exp is NameExp)) {
+      if (!(exp is NameExp)) {
         fi.emitSetTable(lastLine, tRegs[i], kRegs[i], vRegs[i]);
         continue;
       }
@@ -352,7 +353,7 @@ class StatProcessor {
 
       a = fi.slotOfLocVar("_ENV")!;
       if (a >= 0) {
-        if (kRegs[i]< 0) {
+        if (kRegs[i] < 0) {
           b = 0x100 + fi.indexOfConstant(varName);
           fi.emitSetTable(lastLine, a, b, vRegs[i]);
         } else {
@@ -363,7 +364,7 @@ class StatProcessor {
 
       // global var
       a = fi.indexOfUpval("_ENV");
-      if (kRegs[i]< 0) {
+      if (kRegs[i] < 0) {
         b = 0x100 + fi.indexOfConstant(varName);
         fi.emitSetTabUp(lastLine, a, b, vRegs[i]);
       } else {
@@ -374,5 +375,4 @@ class StatProcessor {
     // todo
     fi.usedRegs = oldRegs;
   }
-
 }
